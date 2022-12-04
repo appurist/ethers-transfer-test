@@ -35,11 +35,13 @@ try {
   // construct transaction
   const desk = await contract.connect(signer);
   const txnProps = {
-    gasLimit: 500000,
+    gasLimit: 100000,
     gasPrice: 2000000000,
   };
   const draftTxn = await desk.populateTransaction.transfer(receiver, amount, txnProps);
-  console.log(draftTxn);
+  console.log("Draft transaction: ",draftTxn);
+  console.log("gasLimit: ",draftTxn.gasLimit);
+  console.log("gasPrice (gwei): ",ethers.utils.formatUnits(draftTxn.gasPrice, "gwei"));
   // gas estimate
   const estimate = await desk.estimateGas.transfer(receiver, amount, txnProps);
   console.log(`Estimate: ${estimate} GAS`);
@@ -50,21 +52,21 @@ try {
   // transfer
   console.log(`Sending ${amount} DESK (${amount} wei) from ${signer.address} to ${receiver}...`);
   const receipt = await desk.transfer(receiver, amount, txnProps);
-  console.log(`Sent ${amount} (${deskAmount} DESK) from ${signer.address} to ${receiver}.`);
-
   if (!receipt) {
     console.log(`Transfer of ${amount} (${deskAmount} DESK) to ${receiver}, NO RECEIPT!`);
     throw new Error(`claimReward: Transfer of ${amount} (${deskAmount} DESK) to ${receiver}: could not generate receipt.`);
   }
-
-  console.log(`Transfer of ${amount} (${deskAmount} DESK), receipt OK: ${receipt.hash}`);
+  console.log(`Sent ${amount} (${deskAmount} DESK) from ${signer.address} to ${receiver}.`);
   try {
-    console.log(JSON.stringify(receipt, null, 4));
+    console.log(JSON.stringify(receipt, null, 2));
+    console.log(`Transfer of ${amount} (${deskAmount} DESK), receipt OK: ${receipt.hash}`);
   } catch (e) {
-    console.log(receipt);
+    console.log(e.message);
   }
-  console.log(JSON.stringify(receipt, null, 2));
 } catch (err) {
-  let message = err?.error?.error?.message || err?.error?.reason || err?.reason || err?.message;
+  let message = err?.error?.error?.message || err?.error?.reason || err?.reason || "";
   console.log(`Error sending ${amount} (${deskAmount} DESK) to ${receiver}:`, message);
+  if (err?.message) {
+    console.log(err.message);
+  }
 }
