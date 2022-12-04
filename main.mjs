@@ -15,20 +15,28 @@ function getConfigValue(key) {
 const receiver = getConfigValue("RECEIVER_ADDRESS") || "0x83Ac670f03bAe84e7A0275C32f1B75F59aCDa879";
 const amount = ethers.utils.parseEther(getConfigValue("AMOUNT") || "1");
 const deskAmount = ethers.utils.formatEther(amount);
+
+let provider;
+let signer;
+let contract;
+try {
+  provider = new ethers.providers.AlchemyProvider(PROVIDER_NETWORK, ALCHEMY_KEY);
+  signer = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
+  contract = new ethers.Contract(DESK_CONTRACT_ADDRESS, DESK_CONTRACT_ABI, signer);
+} catch (err) {
+  let message = err?.error?.error?.message || err?.error?.reason || err?.reason || err?.message;
+  console.log(`Cannot initalize contract with ${DESK_CONTRACT_ADDRESS} on ${PROVIDER_NETWORK}:`, message);
+  process.exit(1);
+}
+
 console.log(`Sending ${amount} (${deskAmount} DESK) to ${receiver}`);
 
-let receipt = null;
-let result = null;
 try {
-  const provider = new ethers.providers.AlchemyProvider(PROVIDER_NETWORK, ALCHEMY_KEY);
-  const signer = new ethers.Wallet(SIGNER_PRIVATE_KEY, provider);
-  const contract = new ethers.Contract(DESK_CONTRACT_ADDRESS, DESK_CONTRACT_ABI, signer);
-
   // construct transaction
   const desk = await contract.connect(signer);
   const txnProps = {
-    gasLimit: 1000000, // 10^6 (dimensionless value)
-    gasPrice: 10000000000, // 10^10 wei
+    gasLimit: 500000,
+    gasPrice: 2000000000,
   };
   const draftTxn = await desk.populateTransaction.transfer(receiver, amount, txnProps);
   console.log(draftTxn);
